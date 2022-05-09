@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -19,8 +20,8 @@ import lombok.Data;
 @Data
 public class Client implements Serializable {
     @Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	private long id;  
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private long id;
 
     @Column
     private String name;
@@ -31,16 +32,17 @@ public class Client implements Serializable {
     @Column
     private Integer age;
 
-    @OneToMany(mappedBy = "client")
+    @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
     private List<Address> address;
 
-    public Client(String name, String lastname, Integer age){
+    public Client(String name, String lastname, Integer age) {
         this.name = name;
         this.lastname = lastname;
         this.age = age;
     }
 
-    public Client(){
+    public Client() {
 
     }
+
 }
