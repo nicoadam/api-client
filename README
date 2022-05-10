@@ -1,5 +1,8 @@
 
 you can see the data in
 
-http://localhost:8080/h2-ui/
+http://localhost:3030/h2-ui/
 
+examples:
+http://localhost:3030/api/client/list
+http://localhost:3030/api/client/1
