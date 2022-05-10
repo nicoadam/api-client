@@ -9,13 +9,21 @@ import lombok.Data;
 
 @Data
 public class AddressDTO implements Serializable {
-    private long id;  
-    @JsonProperty("street")
-    private String street_location;
-    private ClientDTO client;
+    private long id;
+    @JsonProperty("location")
+    private String location;
 
-    public AddressDTO(long id, String street_location) {
+    public AddressDTO(long id, String location) {
         this.id = id;
-        this.street_location = street_location;
+        this.location = location;
+    }
+
+    public String toString(){
+        StringBuilder sb=new StringBuilder();
+        sb.append("AddressDTO{")
+                .append("location = '").append(location).append("'")
+                        .append("}")
+        ;
+        return sb.toString();
     }
 }

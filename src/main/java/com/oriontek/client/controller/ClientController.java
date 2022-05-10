@@ -10,18 +10,13 @@ import com.oriontek.client.dto.AddressDTO;
 import com.oriontek.client.dto.ClientDTO;
 import com.oriontek.client.model.Address;
 import com.oriontek.client.model.Client;
+import com.oriontek.client.repository.AddressRepository;
 import com.oriontek.client.repository.ClientRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/client")
@@ -31,7 +26,7 @@ public class ClientController {
     private ClientRepository clientRepository;
 
     @Autowired
-    private AddressController addressController;
+    AddressRepository addressRepository;
 
     @GetMapping("/list")
     public ResponseEntity<List<ClientDTO>> getClient() {
@@ -39,12 +34,13 @@ public class ClientController {
         List<ClientDTO> clientDTOList = this.clientRepository.findAll()
                 .stream().map(cli -> {
                     ClientDTO dto =new ClientDTO();
+                    dto.setId(cli.getId());
                     dto.setName(cli.getName());
                     dto.setAge(cli.getAge());
                     dto.setLastname(cli.getLastname());
                     dto.setAddress(
-                            cli.getAddress().stream().map(address -> {
-                                return new AddressDTO(address.getId(), address.getStreet_location());
+                            cli.getAddresses().stream().map(address -> {
+                                return new AddressDTO(address.getId(), address.getLocation());
                             }).collect(Collectors.toList())
                     );
                     return dto;
@@ -69,15 +65,15 @@ public class ClientController {
             dto.setLastname(cli.getLastname());
             dto.setAge(cli.getAge());
 
-            dto.setAddress(cli.getAddress()
+            dto.setAddress(cli.getAddresses()
                     .stream()
                 .map(address -> {
-                    return new AddressDTO(address.getId(), address.getStreet_location());
+                    return new AddressDTO(address.getId(), address.getLocation());
                 }).collect(Collectors.toList()));
 
             return new ResponseEntity<>(dto, HttpStatus.OK);
         }
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.notFound().build();
 
     }
 
@@ -89,14 +85,12 @@ public class ClientController {
         client.setLastname(clientDTO.getLastname());
         client.setAge(clientDTO.getAge());
 
-        List<Address> addressList=new ArrayList<>();
-        clientDTO.getAddress()
-                .stream()
-                .forEach( addressDTO -> {
-                    addressList.add(new Address(addressDTO.getId(), addressDTO.getStreet_location(), client));
-                });
-
-        client.setAddress(addressList);
+        for(AddressDTO addressDTO: clientDTO.getAddress()) {
+            Address addr= new Address();
+            addr.setLocation(addressDTO.getLocation());
+            addr.setClient(client);
+            client.addAddress(addr);
+        }
 
         Client save = this.clientRepository.save(client);
 
@@ -106,25 +100,32 @@ public class ClientController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/update")
-    public ResponseEntity updateClient(@RequestBody ClientDTO dto) {
+    @PutMapping("/update")
+    public ResponseEntity updateClient(@RequestBody ClientDTO clientDTO) {
 
-        if(Objects.isNull(dto) || Objects.isNull(dto.getId())) {
+        if(Objects.isNull(clientDTO) || Objects.isNull(clientDTO.getId())) {
             return ResponseEntity.badRequest().build();
         }
 
-        Client cli = this.clientRepository.getById(dto.getId());
-        cli.setName(dto.getName());
-        cli.setLastname(dto.getLastname());
-        cli.setAge(dto.getAge());
+        Client client = this.clientRepository.getById(clientDTO.getId());
 
-        cli.setAddress(dto.getAddress()
-                .stream()
-                .map(address -> {
-                    return new Address(address.getId(), address.getStreet_location(), cli);
-                }).collect(Collectors.toList()));
+        if( Objects.isNull(client.getId())){
+            return ResponseEntity.notFound().build();
+        }
+        client.setName(clientDTO.getName());
+        client.setLastname(clientDTO.getLastname());
+        client.setAge(clientDTO.getAge());
 
-        Client save = this.clientRepository.save(cli);
+        client.getAddresses().clear();
+
+        for(AddressDTO addressDTO: clientDTO.getAddress()) {
+            Address addr= new Address();
+            addr.setLocation(addressDTO.getLocation());
+            addr.setClient(client);
+            client.addAddress(addr);
+        }
+
+        Client save = this.clientRepository.save(client);
 
         if (Objects.isNull(save)) {
             return ResponseEntity.badRequest().build();
@@ -137,9 +138,9 @@ public class ClientController {
     @DeleteMapping("/{id}")
     public ResponseEntity deleteByIdClient(@PathVariable Long id) throws Exception {
 
-        Client save = this.clientRepository.getById(id);
+        Client client = this.clientRepository.getById(id);
 
-        if (Objects.isNull(save)) {
+        if (Objects.isNull(client.getId())) {
             return ResponseEntity.notFound().build();
         }
         this.clientRepository.deleteById(id);

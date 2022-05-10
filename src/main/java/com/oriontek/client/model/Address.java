@@ -19,19 +19,45 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class Address implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column
-    private String street_location;
+    private String location;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
+
+
+    public Address(String location, Client client){
+        this.location = location;
+        this.setClient(client);
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Client )) return false;
+        return id != null && id.equals(((Client) o).getId());
+    }
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    public String toString(){
+        StringBuilder sb=new StringBuilder();
+        sb.append("AddressDTO{")
+                .append("location = '").append(location).append("'")
+                .append("}")
+        ;
+        return sb.toString();
+    }
+
 
 }
